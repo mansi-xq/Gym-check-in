@@ -12,7 +12,7 @@ import { AddFriend } from './components/AddFriend';
 import { FriendsProgress } from './components/FriendsProgress';
 import { getCheckIns, saveCheckIns, getSettings, saveSettings } from './utils/storage';
 import { syncCheckInsToSupabase, getCheckInsFromSupabase, syncSettingsToSupabase, getSettingsFromSupabase } from './utils/supabaseStorage';
-import { signInAnonymously, getCurrentUser, getUserProfile } from './utils/auth';
+import { signUpWithEmail, getCurrentUser, getUserProfile } from './utils/auth';
 import { getFriendsProgress } from './utils/friends';
 import { calculateStats } from './utils/statsUtils';
 import { formatDate, isToday } from './utils/dateUtils';
@@ -114,21 +114,26 @@ function App() {
     }
   };
 
-  const handleUserSetup = async (name: string, phone?: string) => {
+  const handleUserSetup = async (
+    email: string,
+    password: string,
+    name: string,
+    phone?: string
+  ) => {
     try {
-      const authData = await signInAnonymously(name, phone);
+      const authData = await signUpWithEmail(email, password, name, phone);
       if (authData.user) {
         const profile = await getUserProfile(authData.user.id);
         setUser(profile);
-        
+  
         // Sync existing localStorage data to Supabase
         const localCheckIns = getCheckIns();
         const localSettings = getSettings();
-        
+  
         if (localCheckIns.length > 0) {
           await syncCheckInsToSupabase(localCheckIns, authData.user.id);
         }
-        
+  
         await syncSettingsToSupabase(localSettings, authData.user.id);
       }
     } catch (error) {
@@ -136,6 +141,7 @@ function App() {
       alert('Failed to set up profile. Please try again.');
     }
   };
+  
 
   const handleCheckIn = async () => {
     const newCheckIn: CheckIn = {
